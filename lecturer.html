@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AttendX — Lecturer Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0d0f14;
+    --bg: #f5f3ee;
+    --white: #ffffff;
+    --accent: #1a56db;
+    --accent-light: #e8effe;
+    --danger: #e84d2a;
+    --success: #16a34a;
+    --warn: #d97706;
+    --muted: #6b7280;
+    --border: #e0ddd6;
+    --sidebar-w: 248px;
+    --radius: 12px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ─── SIDEBAR ─── */
+  .sidebar {
+    width: var(--sidebar-w);
+    background: var(--ink);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 100;
+    overflow-y: auto;
+  }
+  .sidebar-logo {
+    padding: 28px 24px 22px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.3rem;
+    letter-spacing: -0.03em;
+    color: white;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    flex-shrink: 0;
+  }
+  .sidebar-logo span { color: #4d82f5; }
+  .sidebar-role {
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    flex-shrink: 0;
+  }
+  .avatar {
+    width: 36px; height: 36px;
+    background: #4d82f5;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: white;
+    flex-shrink: 0;
+  }
+  .user-name { font-size: 0.85rem; font-weight: 500; color: white; }
+  .user-role { font-size: 0.72rem; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 0.06em; }
+  .sidebar-nav { padding: 16px 12px; flex: 1; }
+  .nav-section-label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(255,255,255,0.3);
+    padding: 0 12px;
+    margin: 16px 0 6px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: rgba(255,255,255,0.6);
+    transition: all 0.15s;
+    text-decoration: none;
+    margin-bottom: 2px;
+  }
+  .nav-item .icon { font-size: 1rem; width: 20px; text-align: center; }
+  .nav-item:hover { background: rgba(255,255,255,0.07); color: white; }
+  .nav-item.active { background: var(--accent); color: white; }
+  .sidebar-footer { padding: 16px 12px; border-top: 1px solid rgba(255,255,255,0.08); flex-shrink: 0; }
+
+  /* ─── MAIN ─── */
+  .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+  .topbar {
+    background: white;
+    border-bottom: 1px solid var(--border);
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .page-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.1rem; letter-spacing: -0.02em; }
+  .topbar-right { display: flex; align-items: center; gap: 16px; }
+  .notif-btn {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+    position: relative;
+    transition: background 0.15s;
+  }
+  .notif-btn:hover { background: var(--bg); }
+  .notif-dot {
+    position: absolute;
+    top: 5px; right: 5px;
+    width: 7px; height: 7px;
+    background: var(--danger);
+    border-radius: 50%;
+    border: 1.5px solid white;
+  }
+  .content { padding: 32px; flex: 1; }
+
+  /* ─── VIEWS ─── */
+  .view { display: none; animation: fadeIn 0.25s ease; }
+  .view.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ─── GREETING ─── */
+  .greeting { margin-bottom: 28px; }
+  .greeting h2 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.6rem; letter-spacing: -0.02em; margin-bottom: 4px; }
+  .greeting p { color: var(--muted); font-size: 0.9rem; }
+
+  /* ─── STATS ─── */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .stat-card {
+    background: white; border-radius: var(--radius); padding: 20px;
+    border: 1px solid var(--border); transition: box-shadow 0.2s;
+  }
+  .stat-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+  .stat-label-sm { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 10px; }
+  .stat-value { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 2rem; letter-spacing: -0.03em; }
+  .stat-sub { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+  .stat-badge { display: inline-block; font-size: 0.7rem; padding: 2px 8px; border-radius: 100px; margin-top: 8px; font-weight: 500; }
+  .badge-green { background: #dcfce7; color: var(--success); }
+  .badge-blue { background: var(--accent-light); color: var(--accent); }
+  .badge-orange { background: #fef3c7; color: var(--warn); }
+  .badge-red { background: #fee2e2; color: var(--danger); }
+
+  /* ─── SECTION HEADER ─── */
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+  .section-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.05rem; letter-spacing: -0.02em; }
+
+  /* ─── BUTTONS ─── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 9px 18px; border-radius: 8px;
+    font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 0.85rem;
+    cursor: pointer; border: none; transition: all 0.15s; text-decoration: none;
+  }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #1244c0; }
+  .btn-danger { background: var(--danger); color: white; }
+  .btn-danger:hover { background: #c73d1e; }
+  .btn-outline { background: none; border: 1.5px solid var(--border); color: var(--ink); }
+  .btn-outline:hover { background: var(--bg); }
+  .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
+  .btn-success { background: var(--success); color: white; }
+  .btn-success:hover { background: #158a40; }
+  .btn-warn { background: var(--warn); color: white; }
+
+  /* ─── TABLE ─── */
+  .table-wrap { background: white; border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; margin-bottom: 20px; }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    background: var(--bg); padding: 12px 16px; font-size: 0.75rem;
+    text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted);
+    font-weight: 500; text-align: left; border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  td {
+    padding: 13px 16px; font-size: 0.875rem;
+    border-bottom: 1px solid var(--border); color: var(--ink); vertical-align: middle;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafaf8; }
+
+  /* ─── STATUS BADGES ─── */
+  .status {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 0.75rem; font-weight: 500; padding: 3px 10px; border-radius: 100px;
+  }
+  .status::before { content: ''; width: 6px; height: 6px; border-radius: 50%; }
+  .status-live { background: #dcfce7; color: var(--success); }
+  .status-live::before { background: var(--success); animation: pulse 1.5s infinite; }
+  .status-ended { background: #f3f4f6; color: var(--muted); }
+  .status-ended::before { background: var(--muted); }
+  .status-upcoming { background: #fef3c7; color: var(--warn); }
+  .status-upcoming::before { background: var(--warn); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* ─── MODAL ─── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.4); z-index: 200;
+    align-items: center; justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: white; border-radius: 16px; padding: 32px;
+    width: 100%; max-width: 520px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    animation: slideUp 0.25s ease;
+    max-height: 90vh; overflow-y: auto;
+  }
+  .modal-lg { max-width: 780px; }
+  @keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+  .modal-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.25rem; margin-bottom: 6px; }
+  .modal-sub { font-size: 0.85rem; color: var(--muted); margin-bottom: 24px; }
+  .form-group { margin-bottom: 18px; }
+  .form-label { display: block; font-size: 0.78rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink); margin-bottom: 7px; }
+  .form-input, .form-select {
+    width: 100%; padding: 11px 14px;
+    border: 1.5px solid var(--border); border-radius: 8px;
+    font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
+    color: var(--ink); background: var(--bg); outline: none; transition: border-color 0.2s;
+  }
+  .form-input:focus, .form-select:focus {
+    border-color: var(--accent); background: white;
+    box-shadow: 0 0 0 3px rgba(26,86,219,0.08);
+  }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+
+  /* ─── LIVE MONITOR ─── */
+  .live-card {
+    background: white; border-radius: var(--radius);
+    border: 1.5px solid var(--border); padding: 20px 24px; margin-bottom: 16px;
+  }
+  .live-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; gap: 12px; }
+  .live-card-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.05rem; }
+  .live-card-meta { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+  .progress-bar-wrap { background: var(--bg); border-radius: 100px; height: 8px; overflow: hidden; margin-bottom: 8px; }
+  .progress-bar { height: 100%; border-radius: 100px; background: var(--accent); transition: width 0.5s; }
+  .progress-label { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--muted); }
+  .student-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+  .chip {
+    background: var(--accent-light); color: var(--accent);
+    font-size: 0.75rem; font-weight: 500; padding: 4px 10px; border-radius: 100px;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .chip-absent { background: #fee2e2; color: var(--danger); }
+
+  /* ─── FILTER ROW ─── */
+  .filter-row { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+  .filter-row .form-input, .filter-row .form-select { width: auto; padding: 8px 12px; font-size: 0.83rem; }
+
+  /* ─── TWO COL ─── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+  /* ─── ELIGIBILITY BAR ─── */
+  .elig-bar-wrap { height: 6px; background: #f3f4f6; border-radius: 100px; overflow: hidden; }
+  .elig-bar { height: 100%; border-radius: 100px; transition: width 0.4s; }
+  .elig-bar.pass { background: var(--success); }
+  .elig-bar.warn-bar { background: var(--warn); }
+  .elig-bar.fail-bar { background: var(--danger); }
+
+  /* ─── ELIGIBILITY BADGE ─── */
+  .elig-badge { display: inline-block; font-size: 0.72rem; font-weight: 600; padding: 3px 10px; border-radius: 100px; }
+  .elig-eligible { background: #dcfce7; color: var(--success); }
+  .elig-warning { background: #fef3c7; color: var(--warn); }
+  .elig-ineligible { background: #fee2e2; color: var(--danger); }
+
+  /* ─── COURSE CARD ─── */
+  .course-card {
+    background: white; border-radius: var(--radius);
+    border: 1px solid var(--border); padding: 20px; cursor: pointer;
+    transition: box-shadow 0.2s, border-color 0.2s;
+  }
+  .course-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.07); border-color: var(--accent); }
+  .course-tag { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.1rem; }
+  .course-name { font-size: 0.82rem; color: var(--muted); margin-top: 2px; }
+  .course-stats { display: flex; gap: 16px; margin-top: 14px; flex-wrap: wrap; }
+  .course-stat-item { font-size: 0.78rem; color: var(--muted); }
+  .course-stat-item strong { display: block; font-size: 1rem; color: var(--ink); font-family: 'Syne', sans-serif; font-weight: 700; }
+
+  /* ─── DIVIDER ─── */
+  .divider { height: 1px; background: var(--border); margin: 24px 0; }
+
+  /* ─── TABS ─── */
+  .tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid var(--border); }
+  .tab {
+    padding: 10px 18px; font-size: 0.875rem; font-weight: 500; cursor: pointer;
+    border-bottom: 2px solid transparent; margin-bottom: -2px; color: var(--muted);
+    transition: all 0.15s;
+  }
+  .tab:hover { color: var(--ink); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ─── EMPTY STATE ─── */
+  .empty-state { text-align: center; padding: 48px 20px; color: var(--muted); }
+  .empty-state .icon { font-size: 2.5rem; margin-bottom: 12px; }
+  .empty-state p { font-size: 0.9rem; }
+
+  /* ─── SESSION DETAIL ─── */
+  .session-detail-header {
+    background: white; border-radius: var(--radius); border: 1px solid var(--border);
+    padding: 20px 24px; margin-bottom: 20px;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+  }
+  .breadcrumb { font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; cursor: pointer; }
+  .breadcrumb:hover { color: var(--accent); }
+
+  /* ─── PRESENT / ABSENT PILLS ─── */
+  .present-pill { background: #dcfce7; color: var(--success); padding: 2px 10px; border-radius: 100px; font-size: 0.75rem; font-weight: 500; }
+  .absent-pill  { background: #fee2e2; color: var(--danger);  padding: 2px 10px; border-radius: 100px; font-size: 0.75rem; font-weight: 500; }
+
+  /* ─── ENROLL COURSE CARD ─── */
+  .enroll-card {
+    background: white; border-radius: var(--radius); border: 1px solid var(--border);
+    padding: 20px; display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 12px; transition: box-shadow 0.2s;
+  }
+  .enroll-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+
+  /* ─── INFO HIGHLIGHT ─── */
+  .info-box {
+    background: var(--accent-light); border-radius: 8px; padding: 14px 16px;
+    font-size: 0.85rem; color: var(--accent); margin-bottom: 16px;
+    display: flex; align-items: flex-start; gap: 8px;
+  }
+
+  /* ─── OVERVIEW EMPTY ─── */
+  .overview-empty {
+    background: white; border-radius: var(--radius); border: 1px solid var(--border);
+    padding: 32px; text-align: center; color: var(--muted);
+  }
+  .overview-empty .icon { font-size: 1.8rem; margin-bottom: 8px; }
+  .overview-empty p { font-size: 0.875rem; }
+
+  /* ─── RISK ANALYSIS (NEW) ─── */
+  .risk-panel {
+    margin-top: 14px; border-top: 1px solid var(--border); padding-top: 14px;
+  }
+  .risk-panel-label {
+    font-size: 0.8rem; font-weight: 600; color: var(--muted);
+    margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .risk-loading, .risk-empty, .risk-error {
+    padding: 12px 0; font-size: 0.85rem; color: var(--muted);
+  }
+  .risk-error { color: var(--danger); }
+  .chip-risk-high { background: #fee2e2; color: var(--danger); }
+  .chip-risk-med  { background: #fef3c7; color: var(--warn); }
+  .chip-risk-low  { background: #dcfce7; color: var(--success); }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════ SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo"><span></span></div>
+  <div class="sidebar-role">
+    <div class="avatar">AO</div>
+    <div class="user-info">
+      <div class="user-name">Dr. Adebayo Okafor</div>
+      <div class="user-role">Lecturer</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <span class="nav-section-label">Main</span>
+    <a class="nav-item active" onclick="showView('overview',this)"><span class="icon">◼</span>Overview</a>
+    <a class="nav-item" onclick="showView('mycourses',this)"><span class="icon">📚</span>My Courses</a>
+    <a class="nav-item" onclick="showView('enroll',this)"><span class="icon">＋</span>Enroll / Unenrolled</a>
+    <a class="nav-item" onclick="showView('create',this)"><span class="icon">🎯</span>Create Attendance</a>
+    <a class="nav-item" onclick="showView('monitor',this)"><span class="icon">◉</span>Active Sessions</a>
+    <span class="nav-section-label">Reports</span>
+    <a class="nav-item" onclick="showView('history',this)"><span class="icon">🗂</span>Attendance History</a>
+    <a class="nav-item" onclick="showView('eligibility',this)"><span class="icon">✅</span>Exam Eligibility</a>
+    <span class="nav-section-label">Account</span>
+    <a class="nav-item" onclick="signOut()"><span class="icon">→</span>Sign Out</a>
+  </nav>
+</aside>
+
+<!-- ═══════════════════════════════════════════ MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="page-title" id="pageTitle">Overview</div>
+    <div class="topbar-right">
+      <button class="notif-btn">🔔<span class="notif-dot"></span></button>
+      <div class="avatar" style="background:#1a56db;">AO</div>
+    </div>
+  </div>
+  <div class="content">
+
+    <!-- ══════════ OVERVIEW ══════════ -->
+    <div class="view active" id="view-overview">
+      <div class="greeting">
+        <h2 id="overviewGreeting">Good day 👋</h2>
+        <p id="overviewSub">Loading your dashboard...</p>
+      </div>
+
+      <!-- Stats: all populated from API -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label-sm">Total Sessions</div>
+          <div class="stat-value" id="ovTotalSessions">—</div>
+          <div class="stat-sub">This semester</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label-sm">Avg Attendance</div>
+          <div class="stat-value" id="ovAvgRate">—</div>
+          <div class="stat-sub">Across all courses</div>
+          <span class="stat-badge badge-blue" id="ovAvgBadge" style="display:none"></span>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label-sm">Active Now</div>
+          <div class="stat-value" id="ovActiveCount">—</div>
+          <div class="stat-sub">Live sessions running</div>
+          <span class="stat-badge badge-green" id="ovActiveBadge" style="display:none"></span>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label-sm">Students At-Risk</div>
+          <div class="stat-value" id="ovAtRisk">—</div>
+          <div class="stat-sub">Below 75% threshold</div>
+          <span class="stat-badge badge-orange" id="ovRiskBadge" style="display:none"></span>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <!-- Active Sessions (live only — no scheduling) -->
+        <div>
+          <div class="section-header">
+            <span class="section-title">Active Sessions</span>
+            <button class="btn btn-primary btn-sm"
+              onclick="showView('create', document.querySelector('[onclick*=create]'))">
+              + New
+            </button>
+          </div>
+          <div id="ovActiveSessionsContainer">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Course</th><th>Duration</th><th>Status</th><th></th></tr></thead>
+                <tbody id="ovActiveSessionsBody">
+                  <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:24px">
+                    Loading...
+                  </td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Records -->
+        <div>
+          <div class="section-header">
+            <span class="section-title">Recent Records</span>
+            <button class="btn btn-outline btn-sm"
+              onclick="showView('history', document.querySelector('[onclick*=history]'))">
+              View All
+            </button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Course</th><th>Date</th><th>Rate</th></tr></thead>
+              <tbody id="ovRecentBody">
+                <tr><td colspan="3" style="text-align:center;color:var(--muted);padding:24px">
+                  Loading...
+                </td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ MY COURSES ══════════ -->
+    <div class="view" id="view-mycourses">
+      <div class="greeting">
+        <h2>My Courses</h2>
+        <p>Courses you are currently enrolled in</p>
+      </div>
+      <div id="myCoursesContainer">Loading...</div>
+    </div>
+
+    <!-- ══════════ ENROLL / UNENROLLED ══════════ -->
+    <div class="view" id="view-enroll">
+      <div class="greeting">
+        <h2>Course Enrollment</h2>
+        <p>Enroll in new courses or view courses you haven't enrolled in yet</p>
+      </div>
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab(this,'enrolled-tab')">My Enrolled Courses</div>
+        <div class="tab" onclick="switchTab(this,'unenrolled-tab')">Unenrolled Courses</div>
+      </div>
+      <div id="enrolled-tab">
+        <div id="enrolledCoursesContainer">Loading...</div>
+      </div>
+      <div id="unenrolled-tab" style="display:none">
+        <div id="unenrolledCoursesContainer">Loading...</div>
+      </div>
+    </div>
+
+    <!-- ══════════ CREATE ATTENDANCE ══════════ -->
+    <div class="view" id="view-create">
+      <div class="greeting">
+        <h2>Create Attendance Session</h2>
+        <p>Fill in the details below to open a new live session for students</p>
+      </div>
+      <div style="max-width:560px;background:white;border-radius:var(--radius);border:1px solid var(--border);padding:32px;">
+
+        <div class="form-group">
+          <label class="form-label">Course</label>
+          <select class="form-select" id="createCourseId">
+            <option value="">— Select a Course —</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Lecture Room</label>
+          <select class="form-select" id="createRoomId">
+            <option value="">— Select a Room —</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Duration (minutes)</label>
+          <input class="form-input" type="number" id="createDuration"
+            placeholder="e.g. 60" min="1" max="300">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Your Location</label>
+          <div style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;
+                      padding:12px 14px;font-size:0.88rem;display:flex;align-items:center;
+                      justify-content:space-between;gap:12px">
+            <span id="locationStatus" style="color:var(--muted)">
+              Click detect to get your location
+            </span>
+            <button class="btn btn-outline btn-sm" onclick="detectLocation()">
+              📍 Detect
+            </button>
+          </div>
+          <div id="locationCoords" style="font-size:0.75rem;color:var(--muted);margin-top:6px;display:none">
+            Lat: <span id="latDisplay">—</span> · Lng: <span id="lngDisplay">—</span>
+          </div>
+        </div>
+
+        <div id="createError" style="display:none;background:#fff0ed;border:1px solid #f9c4b8;
+             color:#c0392b;border-radius:6px;padding:10px 14px;font-size:0.82rem;margin-bottom:16px">
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:8px">
+          <button class="btn btn-primary" onclick="createAttendanceSession()">
+            🚀 Launch Session
+          </button>
+          <button class="btn btn-outline" onclick="resetCreateForm()">Reset</button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══════════ ACTIVE SESSIONS / LIVE MONITOR ══════════ -->
+    <div class="view" id="view-monitor">
+      <div class="greeting">
+        <h2>Active Sessions Monitor</h2>
+        <p>Real-time attendance tracking for live sessions</p>
+      </div>
+      <div id="monitorContainer">
+        <div style="text-align:center;color:var(--muted);padding:40px">Loading sessions...</div>
+      </div>
+    </div>
+
+    <!-- ══════════ ATTENDANCE HISTORY ══════════ -->
+    <div class="view" id="view-history">
+      <div id="historyList">
+        <div class="greeting">
+          <h2>Attendance History</h2>
+          <p>Full session log filtered by course</p>
+        </div>
+        <div class="filter-row">
+          <select class="form-select" id="filterCourse" onchange="loadLecturerHistory()">
+            <option value="">All Courses</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Course</th>
+                <th>Date</th>
+                <th>Duration</th>
+                <th>Enrolled</th>
+                <th>Present</th>
+                <th>Absent</th>
+                <th>Rate</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="historyBody">
+              <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px">
+                Loading...
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Session Detail -->
+      <div id="sessionDetailView" style="display:none">
+        <div class="session-detail-header">
+          <div>
+            <div class="breadcrumb" onclick="showHistoryList()">← Back to Attendance History</div>
+            <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.2rem"
+              id="sessionDetailTitle"></div>
+            <div style="font-size:0.82rem;color:var(--muted);margin-top:2px"
+              id="sessionDetailMeta"></div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px"
+          id="sessionDetailStats"></div>
+
+        <div class="tabs">
+          <div class="tab active" onclick="switchDetailTab(this,'present-tab')">Present Students</div>
+          <div class="tab" onclick="switchDetailTab(this,'absent-tab')">Absent Students</div>
+        </div>
+        <div id="present-tab">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>#</th><th>Student ID</th><th>Status</th></tr></thead>
+              <tbody id="presentBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div id="absent-tab" style="display:none">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>#</th><th>Student ID</th><th>Status</th></tr></thead>
+              <tbody id="absentBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ EXAM ELIGIBILITY ══════════ -->
+    <div class="view" id="view-eligibility">
+      <div class="greeting">
+        <h2>Exam Eligibility</h2>
+        <p>Students must have ≥ 75% attendance per course to qualify for exams</p>
+      </div>
+      <div class="info-box">
+        ℹ️ <span>Eligibility threshold is <strong>75%</strong>. Students below this mark are ineligible to sit the exam for that course.</span>
+      </div>
+      <div class="filter-row">
+        <select class="form-select" id="eligCourseFilter" onchange="loadEligibility()">
+          <option value="">Select a Course</option>
+        </select>
+        <button class="btn btn-success btn-sm" onclick="downloadEligibilityFile()">Export CSV</button>
+      </div>
+      <div id="eligSummary" style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;"></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Student ID</th>
+              <th>Attendance %</th>
+              <th>Progress</th>
+              <th>Eligibility</th>
+            </tr>
+          </thead>
+          <tbody id="eligBody">
+            <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px">
+              Select a course to view eligibility.
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ═══════════════════════════════ SCRIPT ═══════════════════════════════ -->
+<script>
+
+//const API_BASE = "https://localhost:7040";
+const API_BASE = "http://alameen52105-001-site1.ftempurl.com";
+const token = localStorage.getItem("token");
+const authHeaders = {
+  "Content-Type": "application/json",
+  "Authorization": `Bearer ${token}`
+};
+
+let lecturerEnrolledCourses = [];
+let lecturerUnenrolledCourses = [];
+let currentLat = null;
+let currentLng = null;
+let lecturerHistoryData = [];
+let eligibilityData = [];
+
+/* ═══════════════════════════════ OVERVIEW (all real data) ═══════════════════════════════ */
+
+async function loadOverview() {
+  setOverviewGreeting();
+
+  // Fire all requests in parallel
+  const [sessionsResult, historyResult, enrolledResult] = await Promise.allSettled([
+    fetch(`${API_BASE}/api/Lecturer/ActiveSessions`,      { headers: authHeaders }).then(r => r.json()),
+    fetch(`${API_BASE}/api/Lecturer/GetAttendanceRecord`, { headers: authHeaders }).then(r => r.json()),
+    fetch(`${API_BASE}/api/Lecturer/EnrolledCourse`,      { headers: authHeaders }).then(r => r.json())
+  ]);
+
+  const activeSessions = sessionsResult.status === 'fulfilled' ? (sessionsResult.value.data || []) : [];
+  const historyData    = historyResult.status  === 'fulfilled' ? (historyResult.value.data  || []) : [];
+  const enrolledCourses = enrolledResult.status === 'fulfilled' ? (enrolledResult.value.data || []) : [];
+
+  /* ── Stat: Active sessions ── */
+  const liveCount = activeSessions.filter(s => s.isActive ?? s.IsActive).length;
+  document.getElementById('ovActiveCount').textContent = liveCount;
+  if (liveCount > 0) {
+    const badge = document.getElementById('ovActiveBadge');
+    badge.textContent = liveCount === 1 ? '1 session live' : `${liveCount} sessions live`;
+    badge.style.display = 'inline-block';
+  }
+
+  /* ── Stat: Total sessions (from history) ── */
+  document.getElementById('ovTotalSessions').textContent = historyData.length;
+
+  /* ── Stat: Avg attendance rate ── */
+  if (historyData.length > 0) {
+    const rates = historyData
+      .map(s => parseFloat((s.rate ?? s.Rate ?? '0').toString()))
+      .filter(n => !isNaN(n));
+    const avg = rates.length ? Math.round(rates.reduce((a, b) => a + b, 0) / rates.length) : 0;
+    document.getElementById('ovAvgRate').textContent = avg + '%';
+    if (avg > 0) {
+      const badge = document.getElementById('ovAvgBadge');
+      badge.textContent = avg >= 75 ? 'Above threshold' : 'Below threshold';
+      badge.className = `stat-badge ${avg >= 75 ? 'badge-green' : 'badge-orange'}`;
+      badge.style.display = 'inline-block';
+    }
+  } else {
+    document.getElementById('ovAvgRate').textContent = 'N/A';
+  }
+
+  /* ── Stat: At-risk students (fetch eligibility per course) ── */
+  const lecturerId = localStorage.getItem('lecturerId');
+  let atRisk = 0;
+  if (enrolledCourses.length && lecturerId) {
+    const eligResults = await Promise.allSettled(enrolledCourses.map(c =>
+      fetch(
+        `${API_BASE}/api/Lecturer/GetStudentEligibilityStatus?lectureid=${lecturerId}&courseid=${c.courseId ?? c.CourseId}`,
+        { headers: authHeaders }
+      ).then(r => r.ok ? r.json() : null)
+    ));
+    for (const er of eligResults) {
+      if (er.status === 'fulfilled' && er.value?.data) {
+        er.value.data.forEach(s => {
+          const pct = parseFloat((s.eligibilitypercentage ?? s.EligibilityPercentage ?? '0').toString());
+          if (pct < 75) atRisk++;
+        });
+      }
+    }
+  }
+  document.getElementById('ovAtRisk').textContent = atRisk;
+  if (atRisk > 0) {
+    const badge = document.getElementById('ovRiskBadge');
+    badge.textContent = 'Needs attention';
+    badge.style.display = 'inline-block';
+  }
+
+  /* ── Active sessions table ── */
+  renderOverviewActiveSessions(activeSessions);
+
+  /* ── Recent records table (last 5) ── */
+  renderOverviewRecentRecords(historyData.slice(0, 5));
+
+  /* ── Update subtitle with live count ── */
+  document.getElementById('overviewSub').textContent =
+    new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) +
+    (liveCount > 0 ? ` · ${liveCount} live session${liveCount > 1 ? 's' : ''} running` : ' · No active sessions');
+}
+
+function setOverviewGreeting() {
+  const h = new Date().getHours();
+  const greet = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  const username = localStorage.getItem('username') || 'Doctor';
+  document.getElementById('overviewGreeting').textContent = `${greet}, ${username} 👋`;
+}
+
+function renderOverviewActiveSessions(sessions) {
+  const tbody = document.getElementById('ovActiveSessionsBody');
+
+  if (!sessions.length) {
+    tbody.innerHTML = `
+      <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:24px">
+        No active sessions right now. Launch one above.
+      </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = sessions.map(s => {
+    const tag      = s.courseTag ?? s.CourseTag ?? '—';
+    const duration = s.duration  ?? s.Duration  ?? '—';
+    const isLive   = s.isActive  ?? s.IsActive;
+    const statusBadge = isLive
+      ? `<span class="status status-live">Live</span>`
+      : `<span class="status status-ended">Ended</span>`;
+    const action = isLive
+      ? `<button class="btn btn-outline btn-sm" onclick="showView('monitor',document.querySelector('[onclick*=monitor]'))">Monitor</button>`
+      : '';
+    return `
+      <tr>
+        <td><strong>${tag}</strong></td>
+        <td>${duration} min</td>
+        <td>${statusBadge}</td>
+        <td>${action}</td>
+      </tr>`;
+  }).join('');
+}
+
+function renderOverviewRecentRecords(records) {
+  const tbody = document.getElementById('ovRecentBody');
+
+  if (!records.length) {
+    tbody.innerHTML = `
+      <tr><td colspan="3" style="text-align:center;color:var(--muted);padding:24px">
+        No attendance records yet.
+      </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = records.map(s => {
+    const tag     = s.courseTag ?? s.CourseTag ?? '—';
+    const rawDate = s.date ?? s.Date;
+    const date    = rawDate
+      ? new Date(rawDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+      : '—';
+    const rate    = s.rate ?? s.Rate ?? '0%';
+    const rateNum = parseFloat(rate);
+    const color   = rateNum >= 80 ? 'var(--success)' : rateNum >= 70 ? 'var(--warn)' : 'var(--danger)';
+    return `
+      <tr>
+        <td>${tag}</td>
+        <td style="color:var(--muted)">${date}</td>
+        <td><strong style="color:${color}">${rate}</strong></td>
+      </tr>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════ ELIGIBILITY ═══════════════════════════════ */
+
+async function loadEligibility() {
+  const courseId   = document.getElementById('eligCourseFilter').value;
+  const lecturerId = localStorage.getItem('lecturerId');
+  const tbody      = document.getElementById('eligBody');
+
+  if (!courseId) {
+    tbody.innerHTML = `
+      <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px">
+        Select a course to view eligibility.
+      </td></tr>`;
+    eligibilityData = [];
+    return;
+  }
+
+  tbody.innerHTML = `
+    <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px">
+      Loading...
+    </td></tr>`;
+
+  try {
+    const [eligRes, studentsRes] = await Promise.all([
+      fetch(`${API_BASE}/api/Lecturer/GetStudentEligibilityStatus?lectureid=${lecturerId}&courseid=${courseId}`, { headers: authHeaders }),
+      fetch(`${API_BASE}/api/Lecturer/GetEnrolledStudentforcourse?courseid=${courseId}`, { headers: authHeaders })
+    ]);
+
+    if (!eligRes.ok || !studentsRes.ok) throw new Error("Failed to fetch eligibility data");
+
+    const [eligResult, studentsResult] = await Promise.all([eligRes.json(), studentsRes.json()]);
+
+    if (eligResult.statuscode === 400) {
+      tbody.innerHTML = `
+        <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px">
+          ${eligResult.message}
+        </td></tr>`;
+      return;
+    }
+
+    eligibilityData = eligResult.data || [];
+
+    const studentMap = {};
+    (studentsResult.data || []).forEach(s => {
+      studentMap[s.id ?? s.Id] = s.userName ?? s.UserName;
+    });
+
+    if (!eligibilityData.length) {
+      tbody.innerHTML = `
+        <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px">
+          No students found for this course.
+        </td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = eligibilityData.map((s, i) => {
+      const pct      = parseFloat((s.eligibilitypercentage ?? s.EligibilityPercentage ?? '0').toString().trim());
+      const barColor = pct >= 75 ? 'var(--success)' : pct >= 65 ? 'var(--warn)' : 'var(--danger)';
+      const badge    = pct >= 75
+        ? `<span style="color:var(--success);font-weight:600">✅ Eligible</span>`
+        : pct >= 65
+          ? `<span style="color:var(--warn);font-weight:600">⚠️ Warning</span>`
+          : `<span style="color:var(--danger);font-weight:600">❌ Ineligible</span>`;
+      const studentId = s.studentId ?? s.StudentId;
+      const matric    = studentMap[studentId] ?? studentId ?? '—';
+      return `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${matric}</td>
+          <td><strong style="color:${barColor}">${pct.toFixed(1)}%</strong></td>
+          <td>
+            <div style="background:#e0e0e0;border-radius:999px;height:8px;width:100%;min-width:80px">
+              <div style="background:${barColor};width:${Math.min(pct, 100)}%;height:8px;border-radius:999px;transition:width 0.4s"></div>
+            </div>
+          </td>
+          <td>${badge}</td>
+        </tr>`;
+    }).join('');
+
+  } catch (err) {
+    console.error("loadEligibility failed:", err);
+    tbody.innerHTML = `
+      <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px">
+        Could not load eligibility data.
+      </td></tr>`;
+  }
+}
+
+async function downloadEligibilityFile() {
+  const courseId = document.getElementById('eligCourseFilter').value;
+  if (!courseId) { alert('Please select a course first.'); return; }
+  try {
+    const res = await fetch(`${API_BASE}/download/eligibilityfile/course?courseid=${courseId}`, { headers: authHeaders });
+    if (!res.ok) throw new Error("Download failed");
+    const blob = await res.blob();
+    const url  = window.URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = `eligibility_${courseId}.csv`; a.click();
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error("downloadEligibilityFile failed:", err);
+    alert("Could not download file. Please try again.");
+  }
+}
+
+/* ═══════════════════════════════ HISTORY ═══════════════════════════════ */
+
+async function loadLecturerHistory() {
+  const courseFilter = document.getElementById('filterCourse').value;
+  lecturerHistoryData = [];
+  document.getElementById('historyBody').innerHTML = `
+    <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px">Loading...</td></tr>`;
+  try {
+    const url = courseFilter
+  ? `${API_BASE}/api/Lecturer/GetAttendanceRecord?coursefilter=${courseFilter}`
+  : `${API_BASE}/api/Lecturer/GetAttendanceRecord`;
+    const res = await fetch(url, { headers: authHeaders });
+    if (!res.ok) throw new Error("Failed to fetch history");
+    const result = await res.json();
+    lecturerHistoryData = result.data || [];
+    renderLecturerHistory();
+  } catch (err) {
+    console.error("loadLecturerHistory failed:", err);
+    document.getElementById('historyBody').innerHTML = `
+      <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px">
+        Could not load attendance history.
+      </td></tr>`;
+  }
+}
+
+function renderLecturerHistory() {
+  const tbody = document.getElementById('historyBody');
+  if (!lecturerHistoryData.length) {
+    tbody.innerHTML = `
+      <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px">
+        No attendance records found.
+      </td></tr>`;
+    return;
+  }
+  tbody.innerHTML = lecturerHistoryData.map((s, i) => {
+    const tag      = s.courseTag  ?? s.CourseTag  ?? '';
+    const duration = s.duration   ?? s.Duration   ?? 0;
+    const enrolled = s.enrolled   ?? s.Enrolled   ?? 0;
+    const present  = s.present    ?? s.Present    ?? 0;
+    const absent   = enrolled - present;
+    const rate     = s.rate       ?? s.Rate       ?? '0%';
+    const date     = new Date(s.date ?? s.Date).toLocaleDateString('en-GB', {
+                       day: '2-digit', month: 'short', year: 'numeric'
+                     });
+    const rateNum   = parseFloat(rate);
+    const rateColor = rateNum >= 80 ? 'var(--success)' : rateNum >= 70 ? 'var(--warn)' : 'var(--danger)';
+    return `
+      <tr>
+        <td><strong>${tag}</strong></td>
+        <td>${date}</td>
+        <td>${duration} min</td>
+        <td>${enrolled}</td>
+        <td style="color:var(--success)">${present}</td>
+        <td style="color:var(--danger)">${absent}</td>
+        <td><strong style="color:${rateColor}">${rate}</strong></td>
+        <td>
+          <button class="btn btn-outline btn-sm" onclick="viewSessionDetail(${i})">View</button>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+function viewSessionDetail(index) {
+  const s = lecturerHistoryData[index];
+  if (!s) return;
+  document.getElementById('historyList').style.display       = 'none';
+  document.getElementById('sessionDetailView').style.display = 'block';
+
+  const tag      = s.courseTag ?? s.CourseTag ?? '';
+  const duration = s.duration  ?? s.Duration  ?? 0;
+  const enrolled = s.enrolled  ?? s.Enrolled  ?? 0;
+  const present  = s.present   ?? s.Present   ?? 0;
+  const absent   = enrolled - present;
+  const rate     = s.rate      ?? s.Rate      ?? '0%';
+  const date     = new Date(s.date ?? s.Date).toLocaleDateString('en-GB', {
+                     day: '2-digit', month: 'short', year: 'numeric'
+                   });
+
+  document.getElementById('sessionDetailTitle').textContent = `${tag} — Attendance Record`;
+  document.getElementById('sessionDetailMeta').textContent  = `${date} · ${duration} min`;
+
+  document.getElementById('sessionDetailStats').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label-sm">Enrolled</div>
+      <div class="stat-value">${enrolled}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label-sm">Present</div>
+      <div class="stat-value" style="color:var(--success)">${present}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label-sm">Absent</div>
+      <div class="stat-value" style="color:var(--danger)">${absent}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label-sm">Rate</div>
+      <div class="stat-value">${rate}</div>
+    </div>`;
+
+  const presentStudents = s.presentstudents ?? s.Presentstudents ?? [];
+  document.getElementById('presentBody').innerHTML = presentStudents.length
+    ? presentStudents.map((id, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td><code style="font-size:.8rem">${id}</code></td>
+          <td><span class="present-pill">Present</span></td>
+        </tr>`).join('')
+    : `<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:16px">No present students.</td></tr>`;
+
+  const absentStudents = s.absentstudents ?? s.Absentstudents ?? [];
+  document.getElementById('absentBody').innerHTML = absentStudents.length
+    ? absentStudents.map((id, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td><code style="font-size:.8rem">${id}</code></td>
+          <td><span class="absent-pill">Absent</span></td>
+        </tr>`).join('')
+    : `<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:16px">No absent students.</td></tr>`;
+
+  document.getElementById('present-tab').style.display = 'block';
+  document.getElementById('absent-tab').style.display  = 'none';
+  document.getElementById('sessionDetailView')
+    .querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === 0));
+}
+
+function showHistoryList() {
+  document.getElementById('historyList').style.display       = 'block';
+  document.getElementById('sessionDetailView').style.display = 'none';
+}
+
+function populateLecturerCourseFilters() {
+  // History filter
+  const histSelect = document.getElementById('filterCourse');
+  histSelect.innerHTML = `<option value="">All Courses</option>`;
+  lecturerEnrolledCourses.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value       = c.courseId  ?? c.CourseId;
+    opt.textContent = `${c.courseTag ?? c.CourseTag} — ${c.name ?? c.Name}`;
+    histSelect.appendChild(opt);
+  });
+
+  // Eligibility filter
+  const eligSelect = document.getElementById('eligCourseFilter');
+  eligSelect.innerHTML = `<option value="">Select a Course</option>`;
+  lecturerEnrolledCourses.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value       = c.courseId  ?? c.CourseId;
+    opt.textContent = `${c.courseTag ?? c.CourseTag} — ${c.name ?? c.Name}`;
+    eligSelect.appendChild(opt);
+  });
+}
+
+/* ═══════════════════════════════ CREATE ATTENDANCE ═══════════════════════════════ */
+
+async function loadCreateFormData() {
+  await Promise.all([loadCoursesForCreate(), loadRoomsForCreate()]);
+}
+
+async function loadCoursesForCreate() {
+  try {
+    const res    = await fetch(`${API_BASE}/api/Lecturer/EnrolledCourse`, { headers: authHeaders });
+    const result = await res.json();
+    const courses = result.data || [];
+    const select  = document.getElementById('createCourseId');
+    select.innerHTML = `<option value="">— Select a Course —</option>`;
+    courses.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value       = c.courseId  ?? c.CourseId;
+      opt.textContent = `${c.courseTag ?? c.CourseTag} — ${c.name ?? c.Name}`;
+      select.appendChild(opt);
+    });
+  } catch (err) {
+    console.error("loadCoursesForCreate failed:", err);
+  }
+}
+
+async function loadRoomsForCreate() {
+  try {
+    const res    = await fetch(`${API_BASE}/api/Lecturer/LectureRooms`, { headers: authHeaders });
+    const result = await res.json();
+    const rooms  = result.data ?? result ?? [];
+    const select = document.getElementById('createRoomId');
+    select.innerHTML = `<option value="">— Select a Room —</option>`;
+    rooms.forEach(r => {
+      const opt = document.createElement('option');
+      opt.value       = r.id   ?? r.Id;
+      opt.textContent = r.name ?? r.Name;
+      select.appendChild(opt);
+    });
+  } catch (err) {
+    console.error("loadRoomsForCreate failed:", err);
+  }
+}
+
+function detectLocation() {
+  const status = document.getElementById('locationStatus');
+  status.textContent = 'Detecting...';
+  status.style.color = 'var(--muted)';
+
+  if (!navigator.geolocation) {
+    status.textContent = 'Geolocation not supported by your browser';
+    status.style.color = 'var(--danger)';
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      currentLat = pos.coords.latitude;
+      currentLng = pos.coords.longitude;
+      status.textContent = '✅ Location detected successfully';
+      status.style.color = 'var(--success)';
+      document.getElementById('locationCoords').style.display = 'block';
+      document.getElementById('latDisplay').textContent = currentLat.toFixed(6);
+      document.getElementById('lngDisplay').textContent = currentLng.toFixed(6);
+    },
+    (err) => {
+      const msgs = {
+        1: '❌ Location access denied. Please allow location in your browser settings.',
+        2: '❌ Location unavailable. Check your connection and try again.',
+        3: '❌ Detection timed out. Move to an open area and try again.'
+      };
+      status.textContent = msgs[err.code] || '❌ Could not get location. Please try again.';
+      status.style.color = 'var(--danger)';
+    },
+    { enableHighAccuracy: false, timeout: 30000, maximumAge: 60000 }
+  );
+}
+
+async function createAttendanceSession() {
+  const courseId = document.getElementById('createCourseId').value;
+  const roomId   = document.getElementById('createRoomId').value;
+  const duration = parseInt(document.getElementById('createDuration').value);
+  const errorBox = document.getElementById('createError');
+
+  if (!courseId)              { showCreateError('Please select a course'); return; }
+  if (!roomId)                { showCreateError('Please select a lecture room'); return; }
+  if (!duration || duration < 1) { showCreateError('Please enter a valid duration'); return; }
+  if (!currentLat || !currentLng) { showCreateError('Please detect your location first'); return; }
+
+  errorBox.style.display = 'none';
+  const btn = document.querySelector('#view-create .btn-primary');
+  btn.disabled = true;
+  btn.textContent = 'Launching...';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/Lecturer/CreatAttendanceSession`, {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({
+        courseId,
+        lectureroomid: roomId,
+        duration,
+        latitude:  currentLat,
+        longitude: currentLng
+      })
+    });
+    const result = await res.json();
+
+    if (!res.ok) {
+      showCreateError(result.message || 'Failed to create session');
+      btn.disabled = false;
+      btn.textContent = '🚀 Launch Session';
+      return;
+    }
+
+    // Success — reset form and redirect to monitor
+    resetCreateForm();
+    showView('monitor', document.querySelector('[onclick*=monitor]'));
+
+  } catch (err) {
+    console.error(err);
+    showCreateError('Could not connect to server');
+    btn.disabled = false;
+    btn.textContent = '🚀 Launch Session';
+  }
+}
+
+function showCreateError(msg) {
+  const box = document.getElementById('createError');
+  box.textContent    = msg;
+  box.style.display  = 'block';
+}
+
+function resetCreateForm() {
+  document.getElementById('createCourseId').value    = '';
+  document.getElementById('createRoomId').value      = '';
+  document.getElementById('createDuration').value    = '';
+  document.getElementById('locationStatus').textContent = 'Click detect to get your location';
+  document.getElementById('locationStatus').style.color = 'var(--muted)';
+  document.getElementById('locationCoords').style.display = 'none';
+  document.getElementById('createError').style.display    = 'none';
+  const btn = document.querySelector('#view-create .btn-primary');
+  if (btn) { btn.disabled = false; btn.textContent = '🚀 Launch Session'; }
+  currentLat = null;
+  currentLng = null;
+}
+
+/* ═══════════════════════════════ ACTIVE SESSIONS MONITOR ═══════════════════════════════ */
+
+async function loadActiveSessions() {
+  try {
+    const res     = await fetch(`${API_BASE}/api/Lecturer/ActiveSessions`, { headers: authHeaders });
+    if (!res.ok) throw new Error("Failed to fetch active sessions");
+    const result  = await res.json();
+    console.log("RAW SESSION DATA:", result.data);
+    renderMonitor(result.data || []);
+  } catch (err) {
+    console.error("loadActiveSessions failed:", err);
+    document.getElementById('monitorContainer').innerHTML = `
+      <div style="background:white;border-radius:var(--radius);border:1px solid var(--border);
+                  padding:28px;text-align:center;color:var(--muted)">
+        Could not load active sessions.
+      </div>`;
+  }
+}
+
+function renderMonitor(sessions) {
+  const container = document.getElementById('monitorContainer');
+
+  if (!sessions.length) {
+    container.innerHTML = `
+      <div style="background:white;border-radius:var(--radius);border:1px solid var(--border);
+                  padding:48px;text-align:center;color:var(--muted)">
+        <div style="font-size:2rem;margin-bottom:8px">🕐</div>
+        <div style="font-weight:500;margin-bottom:4px">No active sessions right now</div>
+        <div style="font-size:0.83rem">Create a session to get started</div>
+      </div>`;
+    return;
+  }
+
+  const active   = sessions.filter(s =>  (s.isActive ?? s.IsActive));
+  const inactive = sessions.filter(s => !(s.isActive ?? s.IsActive));
+
+  container.innerHTML = `
+    ${active.map(s => {
+      const tag       = s.courseTag ?? s.CourseTag ?? '';
+      const duration  = s.duration  ?? s.Duration  ?? 0;
+      const sessionId = s.id ?? s.Id ?? s.sessionId ?? s.SessionId;
+      return `
+        <div class="live-card" style="border-color:#16a34a;border-left:4px solid #16a34a;margin-bottom:16px">
+          <div class="live-card-header">
+            <div>
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+                <div class="live-card-title">${tag}</div>
+                <span class="status status-live">Live</span>
+              </div>
+              <div class="live-card-meta">Duration: ${duration} min</div>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="loadSessionRisk('${sessionId}', 'risk-${sessionId}')">
+              ⚠️ Risk Analysis
+            </button>
+          </div>
+          <div id="risk-${sessionId}"></div>
+        </div>`;
+    }).join('')}
+
+    ${inactive.length ? `
+      <div style="margin-top:24px">
+        <div class="section-title" style="margin-bottom:12px">Inactive Sessions</div>
+        ${inactive.map(s => {
+          const tag      = s.courseTag ?? s.CourseTag ?? '';
+          const duration = s.duration  ?? s.Duration  ?? 0;
+          return `
+            <div class="live-card" style="margin-bottom:12px">
+              <div class="live-card-header">
+                <div>
+                  <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+                    <div class="live-card-title">${tag}</div>
+                    <span class="status status-ended">Ended</span>
+                  </div>
+                  <div class="live-card-meta">Duration: ${duration} min</div>
+                </div>
+              </div>
+            </div>`;
+        }).join('')}
+      </div>
+    ` : ''}`;
+}
+
+/* ═══════════════════════════════ RISK ANALYSIS (NEW) ═══════════════════════════════ */
+
+async function loadSessionRisk(sessionId, containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="risk-panel">
+      <div class="risk-loading">Analyzing attendance risk...</div>
+    </div>`;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/RiskPrediction/predict-session/${sessionId}`, {
+      headers: authHeaders
+    });
+    if (!res.ok) throw new Error("Risk prediction request failed");
+    const results = await res.json();
+
+    if (!results.length) {
+      container.innerHTML = `
+        <div class="risk-panel">
+          <div class="risk-empty">No enrolled students to analyze for this session.</div>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="risk-panel">
+        <div class="risk-panel-label">
+          <span>Attendance Risk (${results.length} student${results.length > 1 ? 's' : ''})</span>
+        </div>
+        <div class="student-chips">
+          ${results.map(r => {
+            const chipClass = r.riskScore >= 60 ? 'chip-risk-high'
+                             : r.riskScore >= 35 ? 'chip-risk-med'
+                             : 'chip-risk-low';
+            const shortId = (r.studentId || '').toString().slice(0, 8);
+            return `<span class="chip ${chipClass}">${shortId}… — ${r.riskScore}% risk</span>`;
+          }).join('')}
+        </div>
+      </div>`;
+  } catch (err) {
+    console.error("loadSessionRisk failed:", err);
+    container.innerHTML = `
+      <div class="risk-panel">
+        <div class="risk-error">Could not load risk analysis. Please try again.</div>
+      </div>`;
+  }
+}
+
+/* ═══════════════════════════════ MY COURSES ═══════════════════════════════ */
+
+function renderMyCourses() {
+  const container = document.getElementById('myCoursesContainer');
+  if (!lecturerEnrolledCourses.length) {
+    container.innerHTML = `
+      <div style="background:white;padding:24px;border-radius:12px;
+                  border:1px solid var(--border);color:var(--muted)">
+        You are not enrolled in any course yet.
+      </div>`;
+    return;
+  }
+  container.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+      ${lecturerEnrolledCourses.map(c => `
+        <div class="course-card">
+          <div class="course-tag">${c.courseTag ?? c.CourseTag}</div>
+          <div class="course-name">${c.name ?? c.Name}</div>
+        </div>`).join('')}
+    </div>`;
+}
+
+/* ═══════════════════════════════ ENROLLMENT ═══════════════════════════════ */
+
+async function loadLecturerEnrolledCourses() {
+  try {
+    const res    = await fetch(`${API_BASE}/api/Lecturer/EnrolledCourse`, { headers: authHeaders });
+    const result = await res.json();
+    lecturerEnrolledCourses = result.data || [];
+    renderLecturerEnrolledCourses();
+    populateLecturerCourseFilters();
+  } catch (err) {
+    console.error("loadLecturerEnrolledCourses failed:", err);
+  }
+}
+
+async function loadLecturerUnenrolledCourses() {
+  try {
+    const res    = await fetch(`${API_BASE}/api/Lecturer/UnEnrolledCourse`, { headers: authHeaders });
+    const result = await res.json();
+    lecturerUnenrolledCourses = result.data || [];
+    renderLecturerUnenrolledCourses();
+  } catch (err) {
+    console.error("loadLecturerUnenrolledCourses failed:", err);
+  }
+}
+
+function renderLecturerEnrolledCourses() {
+  const container = document.getElementById('enrolledCoursesContainer');
+  if (!lecturerEnrolledCourses.length) {
+    container.innerHTML = `
+      <div style="background:white;padding:24px;border-radius:12px;
+                  border:1px solid var(--border);color:var(--muted)">
+        You are not enrolled in any course yet.
+      </div>`;
+    return;
+  }
+  container.innerHTML = lecturerEnrolledCourses.map(c => `
+    <div class="enroll-card">
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700">
+          ${c.courseTag ?? c.CourseTag} — ${c.name ?? c.Name}
+        </div>
+      </div>
+      <span class="stat-badge badge-green">Enrolled</span>
+    </div>`).join('');
+}
+
+function renderLecturerUnenrolledCourses() {
+  const container = document.getElementById('unenrolledCoursesContainer');
+  if (!lecturerUnenrolledCourses.length) {
+    container.innerHTML = `
+      <div style="background:white;padding:24px;border-radius:12px;
+                  border:1px solid var(--border);color:var(--muted)">
+        No available courses to enroll in.
+      </div>`;
+    return;
+  }
+  container.innerHTML = lecturerUnenrolledCourses.map(c => `
+    <div class="enroll-card">
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700">
+          ${c.courseTag ?? c.CourseTag} — ${c.name ?? c.Name}
+        </div>
+      </div>
+      <button class="btn btn-primary btn-sm"
+        onclick="enrollLecturerCourse('${c.courseId ?? c.CourseId}')">
+        Enroll
+      </button>
+    </div>`).join('');
+}
+
+async function enrollLecturerCourse(courseId) {
+  try {
+    const res    = await fetch(`${API_BASE}/api/Lecturer/EnrollCourse`, {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify([{ courseId }])
+    });
+    const result = await res.json();
+    if (!res.ok) { alert(result.message || "Enrollment failed"); return; }
+
+    const justEnrolled = lecturerUnenrolledCourses.find(c => (c.courseId ?? c.CourseId) === courseId);
+    lecturerUnenrolledCourses = lecturerUnenrolledCourses.filter(c => (c.courseId ?? c.CourseId) !== courseId);
+    if (justEnrolled) lecturerEnrolledCourses.push(justEnrolled);
+
+    renderLecturerEnrolledCourses();
+    renderLecturerUnenrolledCourses();
+    populateLecturerCourseFilters();
+  } catch (err) {
+    console.error(err);
+    alert("Could not connect to server");
+  }
+}
+
+/* ═══════════════════════════════ VIEW NAVIGATION ═══════════════════════════════ */
+
+function showView(viewId, el) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-' + viewId).classList.add('active');
+  if (el) el.classList.add('active');
+
+  const titles = {
+    overview:    'Overview',
+    mycourses:   'My Courses',
+    enroll:      'Enroll / Unenrolled',
+    create:      'Create Attendance',
+    monitor:     'Active Sessions',
+    history:     'Attendance History',
+    eligibility: 'Exam Eligibility'
+  };
+  document.getElementById('pageTitle').textContent = titles[viewId] || '';
+
+  if (viewId === 'overview')     loadOverview();
+  if (viewId === 'mycourses')    renderMyCourses();
+  if (viewId === 'enroll')       { loadLecturerEnrolledCourses(); loadLecturerUnenrolledCourses(); }
+  if (viewId === 'create')       loadCreateFormData();
+  if (viewId === 'monitor')      loadActiveSessions();
+  if (viewId === 'history')      { populateLecturerCourseFilters(); loadLecturerHistory(); }
+  if (viewId === 'eligibility')  populateLecturerCourseFilters();
+}
+
+/* ═══════════════════════════════ TABS ═══════════════════════════════ */
+
+function switchTab(el, targetId) {
+  el.closest('.tabs').querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  ['enrolled-tab', 'unenrolled-tab'].forEach(id => {
+    const e = document.getElementById(id); if (e) e.style.display = 'none';
+  });
+  const target = document.getElementById(targetId);
+  if (target) target.style.display = 'block';
+}
+
+function switchDetailTab(el, targetId) {
+  el.closest('.tabs').querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  ['present-tab', 'absent-tab'].forEach(id => {
+    const e = document.getElementById(id); if (e) e.style.display = 'none';
+  });
+  const t = document.getElementById(targetId);
+  if (t) t.style.display = 'block';
+}
+
+/* ═══════════════════════════════ AUTH ═══════════════════════════════ */
+
+function signOut() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('username');
+  localStorage.removeItem('role');
+  localStorage.removeItem('lecturerId');
+  window.location.href = 'index.html';
+}
+
+/* ═══════════════════════════════ INIT ═══════════════════════════════ */
+
+document.addEventListener('DOMContentLoaded', () => {
+  const username = localStorage.getItem('username') || 'Lecturer';
+  const initials = username.slice(0, 2).toUpperCase();
+
+  document.querySelectorAll('.avatar').forEach(el => el.textContent = initials);
+  document.querySelector('.user-name').textContent = username;
+
+  // Load enrolled courses first (needed for filters), then load overview
+  loadLecturerEnrolledCourses().then(() => {
+    loadOverview();
+  });
+});
+</script>
+</body>
+</html>

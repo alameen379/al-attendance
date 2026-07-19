@@ -1,0 +1,1323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AttendX — Student Dashboard</title>
+<!-- <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet"> -->
+
+<style>
+  :root {
+    --ink: #0d0f14;
+    --bg: #f5f3ee;
+    --white: #ffffff;
+    --accent: #e84d2a;
+    --accent-light: #fff0ed;
+    --blue: #1a56db;
+    --success: #16a34a;
+    --warn: #d97706;
+    --danger: #dc2626;
+    --muted: #6b7280;
+    --border: #e0ddd6;
+    --sidebar-w: 248px;
+    --radius: 12px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ─── SIDEBAR ─── */
+  .sidebar {
+    width: var(--sidebar-w);
+    background: #1a0a06;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 100;
+    overflow-y: auto;
+  }
+  .sidebar-logo {
+    padding: 28px 24px 22px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.3rem;
+    letter-spacing: -0.03em;
+    color: white;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    flex-shrink: 0;
+  }
+  .sidebar-logo span { color: #f47b5e; }
+  .sidebar-role {
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    flex-shrink: 0;
+  }
+  .avatar {
+    width: 36px; height: 36px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.85rem; color: white; flex-shrink: 0;
+  }
+  .user-name { font-size: 0.85rem; font-weight: 500; color: white; }
+  .user-role { font-size: 0.72rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.06em; }
+  .sidebar-nav { padding: 16px 12px; flex: 1; }
+  .nav-section-label {
+    font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em;
+    color: rgba(255,255,255,0.3); padding: 0 12px; margin: 16px 0 6px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 8px; cursor: pointer;
+    font-size: 0.875rem; color: rgba(255,255,255,0.55);
+    transition: all 0.15s; text-decoration: none; margin-bottom: 2px;
+  }
+  .nav-item .icon { font-size: 1rem; width: 20px; text-align: center; }
+  .nav-item:hover { background: rgba(255,255,255,0.07); color: white; }
+  .nav-item.active { background: var(--accent); color: white; }
+
+  /* ─── MAIN ─── */
+  .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+  .topbar {
+    background: white; border-bottom: 1px solid var(--border);
+    padding: 16px 32px; display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 50;
+  }
+  .page-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.1rem; letter-spacing: -0.02em; }
+  .topbar-right { display: flex; align-items: center; gap: 16px; }
+  .notif-btn {
+    width: 36px; height: 36px; border-radius: 8px; border: 1.5px solid var(--border);
+    background: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; position: relative; transition: background 0.15s;
+  }
+  .notif-btn:hover { background: var(--bg); }
+  .notif-dot {
+    position: absolute; top: 5px; right: 5px;
+    width: 7px; height: 7px; background: var(--accent); border-radius: 50%; border: 1.5px solid white;
+  }
+  .content { padding: 32px; flex: 1; }
+
+  /* ─── VIEWS ─── */
+  .view { display: none; animation: fadeIn 0.25s ease; }
+  .view.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ─── COMMON ─── */
+  .greeting { margin-bottom: 28px; }
+  .greeting h2 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.6rem; letter-spacing: -0.02em; margin-bottom: 4px; }
+  .greeting p { color: var(--muted); font-size: 0.9rem; }
+
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .stat-card {
+    background: white; border-radius: var(--radius); padding: 20px;
+    border: 1px solid var(--border); transition: box-shadow 0.2s;
+  }
+  .stat-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+  .stat-label-sm { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 10px; }
+  .stat-value { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 2rem; letter-spacing: -0.03em; }
+  .stat-sub { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+  .stat-badge { display: inline-block; font-size: 0.7rem; padding: 2px 8px; border-radius: 100px; margin-top: 8px; font-weight: 500; }
+  .badge-green { background: #dcfce7; color: var(--success); }
+  .badge-red { background: #fee2e2; color: var(--danger); }
+  .badge-orange { background: #fef3c7; color: var(--warn); }
+  .badge-blue { background: #e0eaff; color: var(--blue); }
+
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+  .section-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.05rem; letter-spacing: -0.02em; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 9px 18px; border-radius: 8px;
+    font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 0.85rem;
+    cursor: pointer; border: none; transition: all 0.15s; text-decoration: none;
+  }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #c73d1e; }
+  .btn-outline { background: none; border: 1.5px solid var(--border); color: var(--ink); }
+  .btn-outline:hover { background: var(--bg); }
+  .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
+  .btn-success { background: var(--success); color: white; }
+  .btn-success:hover { background: #158a40; }
+
+  .table-wrap { background: white; border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; margin-bottom: 20px; }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    background: var(--bg); padding: 12px 16px; font-size: 0.75rem;
+    text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted);
+    font-weight: 500; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap;
+  }
+  td { padding: 13px 16px; font-size: 0.875rem; border-bottom: 1px solid var(--border); color: var(--ink); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafaf8; }
+
+  .status {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 0.75rem; font-weight: 500; padding: 3px 10px; border-radius: 100px;
+  }
+  .status::before { content: ''; width: 6px; height: 6px; border-radius: 50%; }
+  .status-present { background: #dcfce7; color: var(--success); }
+  .status-present::before { background: var(--success); }
+  .status-absent  { background: #fee2e2; color: var(--danger); }
+  .status-absent::before  { background: var(--danger); }
+  .status-live { background: #dcfce7; color: var(--success); }
+  .status-live::before { background: var(--success); animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* ─── SESSION CARD ─── */
+  .session-card {
+    background: white; border-radius: 16px; border: 2px solid var(--border);
+    padding: 24px; margin-bottom: 16px; transition: box-shadow 0.2s;
+  }
+  .session-card.has-session { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(232,77,42,0.08); }
+  .session-course { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.35rem; letter-spacing: -0.02em; margin-bottom: 4px; }
+  .session-meta { font-size: 0.85rem; color: var(--muted); }
+
+  .mark-btn {
+    padding: 13px 28px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.95rem;
+    background: var(--accent); color: white; border: none; border-radius: 10px; cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s, background 0.15s; letter-spacing: 0.01em; white-space: nowrap;
+  }
+  .mark-btn:hover { background: #c73d1e; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(232,77,42,0.35); }
+  .mark-btn:active { transform: scale(0.97); }
+  .mark-btn:disabled { background: var(--success); cursor: default; transform: none; box-shadow: none; }
+
+  .timer-bar-wrap { background: var(--bg); border-radius: 100px; height: 6px; overflow: hidden; margin: 16px 0 8px; }
+  .timer-bar { height: 100%; border-radius: 100px; background: var(--accent); transition: width 1s linear; }
+  .timer-label { font-size: 0.8rem; color: var(--muted); display: flex; justify-content: space-between; }
+
+  .mark-success {
+    display: none; background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 10px;
+    padding: 13px 18px; margin-top: 14px; font-size: 0.88rem; color: var(--success);
+    font-weight: 500; align-items: center; gap: 10px;
+  }
+
+  /* ─── DONUT ─── */
+  .donut-section {
+    display: grid; grid-template-columns: auto 1fr; gap: 32px;
+    align-items: center; margin-bottom: 28px;
+    background: white; border-radius: var(--radius); border: 1px solid var(--border); padding: 24px;
+  }
+  .donut-wrap { position: relative; width: 120px; height: 120px; }
+  .donut-wrap svg { transform: rotate(-90deg); }
+  .donut-wrap .donut-label {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.5rem; color: var(--ink);
+  }
+  .donut-wrap .donut-sub { font-size: 0.65rem; color: var(--muted); font-family: 'DM Sans', sans-serif; font-weight: 400; }
+  .donut-legend h3 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.05rem; margin-bottom: 14px; }
+
+  /* ─── COURSE PROGRESS ─── */
+  .course-progress {
+    background: white; border-radius: var(--radius); border: 1px solid var(--border);
+    padding: 16px 20px; margin-bottom: 10px;
+  }
+  .cp-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .cp-name { font-weight: 600; font-size: 0.9rem; }
+  .cp-pct { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.95rem; }
+  .cp-bar-wrap { background: var(--bg); border-radius: 100px; height: 6px; overflow: hidden; }
+  .cp-bar { height: 100%; border-radius: 100px; }
+
+  /* ─── TABS ─── */
+  .tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid var(--border); }
+  .tab {
+    padding: 10px 18px; font-size: 0.875rem; font-weight: 500; cursor: pointer;
+    border-bottom: 2px solid transparent; margin-bottom: -2px; color: var(--muted); transition: all 0.15s;
+  }
+  .tab:hover { color: var(--ink); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ─── FILTER ROW ─── */
+  .filter-row { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+  .filter-row .form-input, .filter-row .form-select {
+    padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 8px;
+    font-family: 'DM Sans', sans-serif; font-size: 0.83rem; background: white; outline: none; color: var(--ink);
+  }
+  .filter-row .form-input:focus, .filter-row .form-select:focus { border-color: var(--accent); }
+
+  /* ─── MODAL ─── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+    z-index: 200; align-items: center; justify-content: center; backdrop-filter: blur(4px);
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: white; border-radius: 16px; padding: 32px;
+    width: 100%; max-width: 420px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    animation: slideUp 0.25s ease; text-align: center;
+  }
+  @keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+  .modal-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.25rem; margin-bottom: 8px; }
+  .modal-sub { font-size: 0.85rem; color: var(--muted); margin-bottom: 20px; }
+  .modal-actions { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
+
+  .code-input {
+    width: 100%; padding: 14px; border: 2px solid var(--border); border-radius: 10px;
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.6rem;
+    text-align: center; letter-spacing: 0.2em; text-transform: uppercase; outline: none; transition: border-color 0.2s;
+  }
+  .code-input:focus { border-color: var(--accent); }
+
+  /* ─── ELIGIBILITY ─── */
+  .elig-bar-wrap { height: 6px; background: #f3f4f6; border-radius: 100px; overflow: hidden; }
+  .elig-bar { height: 100%; border-radius: 100px; transition: width 0.4s; }
+  .elig-badge { display: inline-block; font-size: 0.72rem; font-weight: 600; padding: 3px 10px; border-radius: 100px; }
+  .elig-eligible { background: #dcfce7; color: var(--success); }
+  .elig-warning  { background: #fef3c7; color: var(--warn); }
+  .elig-ineligible { background: #fee2e2; color: var(--danger); }
+
+  /* ─── ENROLL CARD ─── */
+  .enroll-card {
+    background: white; border-radius: var(--radius); border: 1px solid var(--border);
+    padding: 18px 20px; display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 12px; transition: box-shadow 0.2s;
+  }
+  .enroll-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+
+  /* ─── INFO BOX ─── */
+  .info-box {
+    background: var(--accent-light); border-radius: 8px; padding: 13px 16px;
+    font-size: 0.85rem; color: #9c3515; margin-bottom: 18px; display: flex; align-items: flex-start; gap: 8px;
+  }
+
+  /* ─── TWO COL ─── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════ SIDEBAR ══════════════════════ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">Attend<span>X</span></div>
+  <div class="sidebar-role">
+    <div class="avatar">CI</div>
+    <div class="user-info">
+      <div class="user-name"></div>
+      <div class="user-role">Student</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <span class="nav-section-label">Main</span>
+    <a class="nav-item active" onclick="showView('overview',this)"><span class="icon">◼</span>Overview</a>
+    <a class="nav-item" onclick="showView('sessions',this)"><span class="icon">◉</span>Active Sessions</a>
+    <span class="nav-section-label">Courses</span>
+    <a class="nav-item" onclick="showView('enroll',this)"><span class="icon">＋</span>Enroll / Unenrolled</a>
+    <span class="nav-section-label">Records</span>
+    <a class="nav-item" onclick="showView('history',this)"><span class="icon">☰</span>My History</a>
+    <a class="nav-item" onclick="showView('eligibility',this)"><span class="icon">✅</span>Exam Eligibility</a>
+    <span class="nav-section-label">Account</span>
+    <a class="nav-item" onclick="signOut()"><span class="icon">→</span>Sign Out</a>
+  </nav>
+</aside>
+
+<!-- ══════════════════════ MAIN ══════════════════════ -->
+<div class="main">
+  <div class="topbar">
+    <div class="page-title" id="pageTitle">Overview</div>
+    <div class="topbar-right">
+      <button class="notif-btn">🔔<span class="notif-dot"></span></button>
+      <div class="avatar">CI</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <div class="view active" id="view-overview">
+  <div class="greeting">
+    <h2 id="overviewGreeting">Hey! 👋</h2>
+    <p id="overviewDate"></p>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label-sm">Overall Attendance</div>
+      <div class="stat-value" id="ovOverall">0</div>
+      <div class="stat-sub" id="ovCourseCount">Across your courses</div>
+      <span class="stat-badge" id="ovOverallBadge">0</span>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label-sm">Sessions Attended</div>
+      <div class="stat-value" id="ovAttended">0</div>
+      <div class="stat-sub" id="ovAttendedSub">Out of total</div>
+      <span class="stat-badge badge-blue">This semester</span>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label-sm">Sessions Missed</div>
+      <div class="stat-value" id="ovMissed">0</div>
+      <div class="stat-sub">Across all courses</div>
+      <span class="stat-badge badge-orange">This semester</span>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label-sm">At-Risk Courses</div>
+      <div class="stat-value" id="ovAtRisk">0</div>
+      <div class="stat-sub" id="ovAtRiskSub">Below 75%</div>
+      <span class="stat-badge badge-red">Needs attention</span>
+    </div>
+  </div>
+
+  <!-- Donut + per-course breakdown -->
+  <div class="donut-section">
+    <div class="donut-wrap">
+      <svg width="120" height="120" viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r="50" fill="none" stroke="#f0ede7" stroke-width="14"/>
+        <circle id="ovDonutArc" cx="60" cy="60" r="50" fill="none" stroke="#e84d2a"
+          stroke-width="14" stroke-dasharray="264" stroke-dashoffset="264"
+          stroke-linecap="round"/>
+      </svg>
+      <div class="donut-label">
+        <span id="ovDonutPct">—</span>
+        <span class="donut-sub">overall</span>
+      </div>
+    </div>
+    <div class="donut-legend">
+      <h3>Attendance by Course</h3>
+      <div id="ovCourseBreakdown">Loading...</div>
+    </div>
+  </div>
+
+  <!-- Recent attendance records -->
+  <div class="section-header" style="margin-bottom:16px">
+    <span class="section-title">Recent Attendance</span>
+    <button class="btn btn-outline btn-sm"
+      onclick="showView('history', document.querySelector('[onclick*=history]'))">
+      View All
+    </button>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Course</th>
+          <th>Date</th>
+          <th>Duration</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="ovRecentBody">
+        <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:24px">
+          Loading...
+        </td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+    <!-- ══════════ ACTIVE SESSIONS ══════════ -->
+   <div class="view" id="view-sessions">
+  <div class="greeting">
+    <h2>Active Sessions</h2>
+    <p>Mark your attendance before the window closes</p>
+  </div>
+  <div id="sessionsContainer">
+    <div style="text-align:center;color:var(--muted);padding:40px">Loading sessions...</div>
+  </div>
+</div>
+  
+    <div class="view" id="view-enroll">
+      <div class="greeting">
+        <h2>Course Enrollment</h2>
+        <p>Enroll into courses and view your registered courses</p>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab(this,'tab-enrolled')">My Enrolled Courses</div>
+        <div class="tab"        onclick="switchTab(this,'tab-unenrolled')">Available Courses</div>
+      </div>
+
+      <!-- ENROLLED PANEL -->
+      <div id="tab-enrolled">
+        <!-- <div class="section-header">
+          <span class="section-title">My Courses</span>
+        </div> -->
+        <div id="enrolledCoursesContainer"></div>
+      </div>
+
+      <!-- AVAILABLE PANEL — now correctly inside view-enroll -->
+      <div id="tab-unenrolled" style="display:none">
+        <!-- <div class="section-header">
+          <span class="section-title">Available Courses</span>
+        </div> -->
+        <div id="availableCoursesContainer">Loading.....</div>
+      </div>
+
+    </div><!-- /view-enroll -->
+
+    <!-- ══════════ ATTENDANCE HISTORY ══════════ -->
+    <div class="view" id="view-history">
+      <div class="greeting">
+        <h2>My Attendance History</h2>
+        <p>Full record of your attendance — filter by course or status</p>
+      </div>
+
+      <div class="filter-row">
+  <select class="form-select" id="histCourse">
+    <option value="">All Courses</option>
+  </select>
+</div>
+
+      <div id="histSummary" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap"></div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Session</th>
+              <th>Course Tag</th>
+              <th>Date & Time</th>
+              <th>Duration</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="histBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══════════ EXAM ELIGIBILITY ══════════ -->
+    <div class="view" id="view-eligibility">
+      <div class="greeting">
+        <h2>Exam Eligibility</h2>
+        <p>You need ≥ 75% attendance per course to qualify for exams</p>
+      </div>
+
+      <div class="info-box">
+        ℹ️ <span>The exam eligibility threshold is <strong>75%</strong> per course. Courses below this mark may bar you from sitting the examination.</span>
+      </div>
+
+      <div id="eligCards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px"></div>
+
+      <div class="section-title" style="margin-bottom:16px">Detailed Breakdown</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Course</th><th>Attended</th><th>Total Sessions</th><th>Attendance %</th><th>Progress</th><th>Eligibility</th></tr>
+          </thead>
+          <tbody id="eligBody"></tbody>
+        </table>
+      </div>
+
+      <div style="background:white;border-radius:var(--radius);border:1px solid var(--border);padding:20px;margin-top:4px">
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem;margin-bottom:12px">How many more classes do I need to attend?</div>
+        <div id="eligAdvice" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ═══ MODAL: Mark Attendance ═══ -->
+<div class="modal-overlay" id="markModal">
+  <div class="modal">
+    <div style="font-size:2.2rem;margin-bottom:12px">✋</div>
+    <div class="modal-title">Mark Your Attendance</div>
+    <div class="modal-sub">Enter the session code displayed by your lecturer</div>
+    <input class="code-input" id="codeInput" type="text" placeholder="XXXX" maxlength="8">
+    <div style="font-size:0.78rem;color:var(--muted);margin-top:10px">Demo code: <strong>CSC-8A3F</strong></div>
+    <div id="codeError" style="display:none;color:var(--danger);font-size:.82rem;margin-top:8px">❌ Invalid code. Please check with your lecturer.</div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="submitCode()">Confirm ✓</button>
+      <button class="btn btn-outline" onclick="closeModal('markModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Mark Success ═══ -->
+<div class="modal-overlay" id="successModal">
+  <div class="modal">
+    <div style="font-size:3rem;margin-bottom:12px">🎉</div>
+    <div class="modal-title">Attendance Marked!</div>
+    <div class="modal-sub">You're recorded as <strong>present</strong> for CSC 301 — Lecture 13.</div>
+    <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:14px;font-size:.85rem;color:var(--success);margin-bottom:4px">
+      Marked at <strong id="confirmedTime"></strong> · Session: CSC-8A3F
+    </div>
+    <div class="modal-actions" style="justify-content:center;margin-top:20px">
+      <button class="btn btn-success" onclick="closeModal('successModal')">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ SCRIPT ═══════════════════════════ -->
+<script>
+
+
+let currentMarkingCourse = null;
+/* ─────────────────────────────────────
+   CONFIG
+─────────────────────────────────────*/
+const API_BASE = "http://alameen52105-001-site1.ftempurl.com";
+//const API_BASE = "https://localhost:7040";
+const token = localStorage.getItem("token");
+
+const authHeaders = {
+  "Content-Type": "application/json",
+  "Authorization": `Bearer ${token}`
+};
+
+let availableCourses = [];
+let enrolledCourses  = [];
+let historyData = [];
+let eligibilityData = [];
+
+
+function renderOverview() {
+  const username = localStorage.getItem('username') || 'Student';
+  const now      = new Date();
+
+  document.getElementById('overviewGreeting').textContent =
+    `Hey, ${username}! 👋`;
+  document.getElementById('overviewDate').textContent =
+    now.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+  // ── Stats from historyData ──
+  const total    = historyData.length;
+  const attended = historyData.filter(r => r.status === 'Present').length;
+  const missed   = total - attended;
+  const overall  = total > 0 ? Math.round(attended / total * 100) : 0;
+
+  document.getElementById('ovOverall').textContent     = `${overall}%`;
+  document.getElementById('ovAttended').textContent    = attended;
+  document.getElementById('ovAttendedSub').textContent = `Out of ${total} total`;
+  document.getElementById('ovMissed').textContent      = missed;
+
+  // Overall badge
+  const ovBadge = document.getElementById('ovOverallBadge');
+  if (overall >= 75) {
+    ovBadge.textContent  = 'Above threshold';
+    ovBadge.className    = 'stat-badge badge-green';
+  } else {
+    ovBadge.textContent  = 'Below threshold';
+    ovBadge.className    = 'stat-badge badge-red';
+  }
+
+  // ── Donut ──
+  const circumference = 264;
+  const offset        = circumference - (overall / 100) * circumference;
+  document.getElementById('ovDonutArc').setAttribute('stroke-dashoffset', offset);
+  document.getElementById('ovDonutPct').textContent = `${overall}%`;
+
+  // ── Per-course breakdown from eligibilityData ──
+  const THRESHOLD = 75;
+  const atRisk = eligibilityData.filter(c => {
+    const total = c.totalSessions ?? c.TotalSessions ?? 0;
+    const pct   = c.eligibilityPercentage ?? c.EligibilityPercentage ?? 0;
+    return total > 0 && pct < THRESHOLD;   // skip courses with no sessions yet
+});
+
+  document.getElementById('ovAtRisk').textContent    = atRisk.length;
+  document.getElementById('ovAtRiskSub').textContent =
+    atRisk.length ? atRisk.map(c => c.courseTag ?? c.CourseTag).join(', ') : 'All courses on track';
+  document.getElementById('ovCourseCount').textContent =
+    `Across ${eligibilityData.length} course${eligibilityData.length !== 1 ? 's' : ''}`;
+
+  document.getElementById('ovCourseBreakdown').innerHTML =
+    eligibilityData.length
+      ? eligibilityData.map(c => {
+          const pct  = c.eligibilityPercentage ?? c.EligibilityPercentage ?? 0;
+          const tag  = c.courseTag  ?? c.CourseTag  ?? '';
+          const name = c.courseName ?? c.CourseName ?? '';
+          const color = pct >= 85 ? 'var(--success)' : pct >= THRESHOLD ? 'var(--warn)' : 'var(--danger)';
+          return `
+            <div class="course-progress">
+              <div class="cp-header">
+                <span class="cp-name">${tag} — ${name}</span>
+                <span class="cp-pct" style="color:${color}">${pct}%</span>
+              </div>
+              <div class="cp-bar-wrap">
+                <div class="cp-bar" style="width:${pct}%;background:${color}"></div>
+              </div>
+            </div>
+          `;
+        }).join('')
+      : `<div style="color:var(--muted);font-size:.85rem">No course data yet.</div>`;
+
+  // ── Recent 5 attendance records ──
+  const recent = [...historyData].slice(-5).reverse();
+  document.getElementById('ovRecentBody').innerHTML = recent.length
+    ? recent.map(r => `
+        <tr>
+          <td><strong>${r.course}</strong></td>
+          <td>${r.date}</td>
+          <td>${r.duration}</td>
+          <td><span class="status status-${r.status.toLowerCase()}">${r.status}</span></td>
+        </tr>
+      `).join('')
+    : `<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:24px">
+         No attendance records yet.
+       </td></tr>`;
+}
+
+/* ─────────────────────────────────────
+   VIEW NAVIGATION
+─────────────────────────────────────*/
+function showView(viewId, el) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-' + viewId).classList.add('active');
+  if (el) el.classList.add('active');
+
+  const titles = {
+    overview:'Overview',
+    sessions:'Active Sessions',
+    enroll:'Enroll / Unenrolled',
+    history:'My History',
+    eligibility:'Exam Eligibility'
+  };
+  document.getElementById('pageTitle').textContent = titles[viewId] || '';
+
+  // Lazy-render data views on first visit
+  if (viewId === 'history')     renderHistory();
+  if (viewId === 'eligibility') loadEligibility(); 
+}
+
+function switchTab(el, targetId) {
+  // Deactivate all tabs in the same tab bar
+  el.closest('.tabs').querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+
+  document.getElementById('tab-enrolled').style.display   = 'none';
+  document.getElementById('tab-unenrolled').style.display = 'none';
+  document.getElementById(targetId).style.display         = 'block';
+}
+
+
+function populateCourseFilter() {
+  const select = document.getElementById('histCourse');
+  select.innerHTML = `<option value="">All Courses</option>`;
+
+  enrolledCourses.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.courseId ?? c.CourseId;   // ← send the ID to backend
+    opt.textContent = `${c.courseTag ?? c.CourseTag} — ${c.name ?? c.Name}`;
+    select.appendChild(opt);
+  });
+
+  // Wire the change event to re-fetch from backend
+  select.onchange = () => {
+    const selectedCourseId = select.value;  // empty string = all courses
+    loadAttendanceHistory(selectedCourseId || null);
+  };
+}
+
+
+// function renderHistory() {
+//   const courseFilter = document.getElementById('histCourse').value;
+
+//   // Filter — only by course (no status filter per your requirement)
+//   const rows = historyData.filter(r => {
+//     if (courseFilter && r.course !== courseFilter) return false;
+//     return true;
+//   });
+
+//   const present = rows.filter(r => r.status === 'Present').length;
+//   const absent  = rows.filter(r => r.status === 'Absent').length;
+
+//   document.getElementById('histSummary').innerHTML = `
+//     <span class="stat-badge badge-blue">${rows.length} sessions</span>
+//     <span class="stat-badge badge-green">${present} present</span>
+//     <span class="stat-badge badge-red">${absent} absent</span>
+//   `;
+
+//   document.getElementById('histBody').innerHTML = rows.length
+//     ? rows.map(r => `
+//         <tr>
+//           <td>${r.session}</td>
+//           <td><strong>${r.course}</strong></td>
+//           <td>${r.date}</td>
+//           <td>${r.duration}</td>
+//           <td>
+//             <span class="status status-${r.status.toLowerCase()}">
+//               ${r.status}
+//             </span>
+//           </td>
+//         </tr>
+//       `).join('')
+//     : `<tr>
+//          <td colspan="5" style="text-align:center;color:var(--muted);padding:24px">
+//            No records found.
+//          </td>
+//        </tr>`;
+// }
+
+function renderHistory() {
+  // Remove the courseFilter logic — backend already filtered the data
+  const rows = historyData;
+
+  const present = rows.filter(r => r.status === 'Present').length;
+  const absent  = rows.filter(r => r.status === 'Absent').length;
+
+  document.getElementById('histSummary').innerHTML = `
+    <span class="stat-badge badge-blue">${rows.length} sessions</span>
+    <span class="stat-badge badge-green">${present} present</span>
+    <span class="stat-badge badge-red">${absent} absent</span>
+  `;
+
+  document.getElementById('histBody').innerHTML = rows.length
+    ? rows.map(r => `
+        <tr>
+          <td>${r.session}</td>
+          <td><strong>${r.course}</strong></td>
+          <td>${r.date}</td>
+          <td>${r.duration}</td>
+          <td><span class="status status-${r.status.toLowerCase()}">${r.status}</span></td>
+        </tr>
+      `).join('')
+    : `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px">
+         No records found.
+       </td></tr>`;
+}
+
+/* ─────────────────────────────────────
+   ELIGIBILITY — render cards + table + advice
+─────────────────────────────────────*/
+async function loadEligibility() {
+  const res = await fetch(`${API_BASE}/api/Student/EligibilityStatus`, {
+    headers: authHeaders
+  });
+  const result = await res.json();
+  eligibilityData = result.data || [];  // ← populate it here
+  renderEligibility(eligibilityData);
+}
+
+function renderEligibility(data) {
+  const THRESHOLD = 75;
+
+  // Cards
+  document.getElementById('eligCards').innerHTML = data.map(c => {
+    let cls, label;
+    if (c.totalSessions === 0) {
+      cls = 'badge-blue';
+      label = 'No sessions yet';
+    } else if (c.isEligible) {
+      cls = c.eligibilityPercentage >= 85 ? 'badge-green' : 'badge-orange';
+      label = c.eligibilityPercentage >= 85 ? 'Eligible ✓' : 'At Risk';
+    } else {
+      cls = 'badge-red';
+      label = 'Ineligible ✗';
+    }
+    return `
+      <div class="stat-card">
+        <div class="stat-label-sm">${c.courseTag}</div>
+        <div class="stat-value">${c.totalSessions === 0 ? '—' : c.eligibilityPercentage + '%'}</div>
+        <div class="stat-sub">${c.attendedSessions} / ${c.totalSessions} sessions</div>
+        <span class="stat-badge ${cls}">${label}</span>
+      </div>
+    `;
+}).join('');
+
+  // Table
+ document.getElementById('eligBody').innerHTML = data.map(c => {
+    let cls, label, bar;
+    if (c.totalSessions === 0) {
+      cls = 'elig-warning';
+      label = 'No sessions yet';
+      bar = 'var(--muted)';
+    } else if (c.isEligible) {
+      cls = c.eligibilityPercentage >= 85 ? 'elig-eligible' : 'elig-warning';
+      label = c.eligibilityPercentage >= 85 ? 'Eligible' : 'At Risk';
+      bar = c.eligibilityPercentage >= 85 ? 'var(--success)' : 'var(--warn)';
+    } else {
+      cls = 'elig-ineligible';
+      label = 'Ineligible';
+      bar = 'var(--danger)';
+    }
+    return `
+      <tr>
+        <td><strong>${c.courseTag} — ${c.courseName}</strong></td>
+        <td>${c.attendedSessions}</td>
+        <td>${c.totalSessions}</td>
+        <td><strong>${c.totalSessions === 0 ? '—' : c.eligibilityPercentage + '%'}</strong></td>
+        <td style="min-width:100px">
+          <div class="elig-bar-wrap">
+            <div class="elig-bar" style="width:${c.totalSessions === 0 ? 0 : c.eligibilityPercentage}%;background:${bar}"></div>
+          </div>
+        </td>
+        <td><span class="elig-badge ${cls}">${label}</span></td>
+      </tr>
+    `;
+}).join('');
+
+
+// Advice
+document.getElementById('eligAdvice').innerHTML = data.map(c => {
+    if (c.totalSessions === 0) return `
+      <div style="font-size:.85rem;color:var(--muted)">
+        ℹ️ <strong>${c.courseTag}</strong> — No sessions have been held yet.
+      </div>`;
+
+    if (c.isEligible) return `
+      <div style="font-size:.85rem;color:var(--success)">
+        ✅ <strong>${c.courseTag}</strong> — You're eligible. Keep it up!
+      </div>`;
+
+    const needed = Math.ceil((THRESHOLD / 100 * c.totalSessions - c.attendedSessions) / (1 - THRESHOLD / 100));
+    return `
+      <div style="font-size:.85rem;color:var(--danger)">
+        ⚠️ <strong>${c.courseTag}</strong> — You need at least 
+        <strong>${needed} more consecutive session${needed !== 1 ? 's' : ''}</strong> to reach 75%.
+      </div>`;
+}).join('');
+}
+/* ─────────────────────────────────────
+   MODAL — mark attendance
+─────────────────────────────────────*/
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+
+
+
+/* ─────────────────────────────────────
+   API — load available courses
+─────────────────────────────────────*/
+async function loadAvailableCourses() {
+  try {
+    const res    = await fetch(API_BASE + "/api/Student/UnEnrolledCourse", { method:"GET", headers:authHeaders });
+    const result = await res.json();
+    availableCourses = result.data || [];
+    renderAvailableCourses();
+   // console.log(result);
+  
+  } catch (err) {
+    console.error(err);
+   
+  }
+}
+
+
+/* ─────────────────────────────────────
+   API — load enrolled courses
+─────────────────────────────────────*/
+async function loadEnrolledCourses() {
+  try {
+    const res    = await fetch(API_BASE + "/api/Student/EnrolledCourse", { method:"GET", headers:authHeaders });
+    const result = await res.json();
+    enrolledCourses = result.data || [];
+ renderEnrolledCourses();
+ populateCourseFilter();
+    console.log(result)
+
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+
+// // loadAvailableCourses();
+//loadEnrolledCourses();
+/* ─────────────────────────────────────
+   RENDER — enrolled courses
+─────────────────────────────────────*/
+function renderEnrolledCourses() {
+
+  const container = document.getElementById('enrolledCoursesContainer');
+
+  if (!enrolledCourses.length) {
+
+    container.innerHTML =
+    `
+      <div style="background:white;padding:24px;border-radius:12px;border:1px solid var(--border);color:var(--muted)">
+        You are not enrolled in any course.
+      </div>
+    `;
+
+    return;
+  }
+
+  container.innerHTML = enrolledCourses.map(c => `
+    <div class="enroll-card">
+
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:4px">
+          ${c.name}
+        </div>
+
+        <div style="font-size:.82rem;color:var(--muted)">
+          ${c.courseTag}
+        </div>
+      </div>
+
+      <span class="stat-badge badge-green">
+        Enrolled
+      </span>
+
+    </div>
+  `).join('');
+}
+
+
+/* ─────────────────────────────────────
+   RENDER — available courses
+─────────────────────────────────────*/
+function renderAvailableCourses() {
+  const container = document.getElementById('availableCoursesContainer');
+  if (!availableCourses.length) {
+  container.innerHTML = `
+      <div style="background:white;padding:24px;border-radius:12px;border:1px solid var(--border);color:var(--muted)">
+        No available courses.
+      </div>
+    `; return; }
+  container.innerHTML = availableCourses.map(c => `
+    <div class="enroll-card">
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:4px">
+          ${c.name}
+        </div>
+        <div style="font-size:.82rem;color:var(--muted)">
+          ${c.courseTag}
+        </div>
+      </div>
+      <button
+        class="btn btn-primary btn-sm"
+        onclick="enrollCourse('${c.courseId}')">
+        Enroll
+
+      </button>
+    </div>
+  `).join('');
+}
+
+
+//availableCourses;
+/* ─────────────────────────────────────
+   API — enroll into a course
+─────────────────────────────────────*/
+// async function enrollCourse(courseId) {
+//   try {
+//     const res    = await fetch(API_BASE + "/api/Student/EnrollCourse", {
+//       method:"POST", headers:authHeaders, body:JSON.stringify([{ courseId }])
+//     });
+//     const result = await res.json();
+//     // if (!res.ok) { alert(result.message || "Enrollment failed"); return; }
+
+//     alert("Course enrolled successfully!");
+//   } catch (err) {
+//     console.error(err);
+//     alert("Unable to enroll course.");
+//   }
+// }
+
+async function enrollCourse(courseId) {
+    try {
+        const res = await fetch(API_BASE + "/api/Student/EnrollCourse", {
+            method: "POST",
+            headers: authHeaders,
+            body: JSON.stringify([{ courseId }])
+        });
+
+        const result = await res.json();
+
+        if (!res.ok) {
+            alert(result.message || "Enrollment failed");
+            return;
+        }
+
+        // Remove the enrolled course from availableCourses
+        const justEnrolled = availableCourses.find(c => c.courseId === courseId);
+        availableCourses = availableCourses.filter(c => c.courseId !== courseId);
+
+        // Add it to enrolledCourses
+        if (justEnrolled) {
+            enrolledCourses.push(justEnrolled);
+        }
+
+        // Re-render both lists immediately — no page reload needed
+        renderAvailableCourses();
+        renderEnrolledCourses();
+        populateCourseFilter();
+
+    } catch (err) {
+        console.error(err);
+        alert("Unable to enroll course.");
+    }
+}
+
+function mapAttendanceData(records) {
+  return records.map((r, index) => ({
+    session:  index + 1,                          // no session name in DTO, use index
+    course:   r.courseTag,                        
+    date:     new Date(r.date).toLocaleDateString(),
+    duration: `${r.duration} min`,                
+    status:   r.status ? 'Present' : 'Absent'     // bool → string
+  }));
+}
+
+
+async function loadAttendanceHistory(courseid = null) {
+  
+  try {
+    console.log("courseid being sent:", courseid);
+    const url = courseid
+  ? `${API_BASE}/api/Student/GetattendanceRecord?courseId=${courseid}`  // capital 'I'
+  : `${API_BASE}/api/Student/GetattendanceRecord`;
+
+    const res = await fetch(url, {
+      method: "GET",
+      headers: authHeaders
+      // Fix: removed body — GET requests cannot have a body
+    });
+    
+      if (!res.ok) throw new Error("Error fetching attendance");
+
+    const result = await res.json(); // Fix: was `response`, should be `res`
+    historyData = (result.data || []).map((r, index) => ({
+      session: index + 1,
+      course: r.courseTag,
+      date: new Date(r.date).toLocaleDateString(),
+      duration: `${r.duration} min`,
+      status: r.status ? 'Present' : 'Absent'
+    }));
+    renderHistory();
+  }
+  catch(err){
+    console.error("loadAttendanceHistory failed:", err);
+  }
+  
+}
+
+
+async function loadActiveSessions() {
+  try {
+    const res = await fetch(`${API_BASE}/api/Student/ActiveSessions`, {
+      method: "GET",
+      headers: authHeaders
+    });
+
+    if (!res.ok) throw new Error("Failed to fetch active sessions");
+
+    const result = await res.json();
+    const sessions = result.data || [];
+
+    renderActiveSessions(sessions);
+
+  } catch (err) {
+    console.error("loadActiveSessions failed:", err);
+  }
+}
+
+
+function renderActiveSessions(sessions) {
+  const container = document.getElementById('sessionsContainer');
+
+  const active   = sessions.filter(s => s.isActive ?? s.IsActive);
+  const inactive = sessions.filter(s => !(s.isActive ?? s.IsActive));
+
+  if (!sessions.length) {
+    container.innerHTML = `
+      <div style="background:white;border-radius:var(--radius);border:1px solid var(--border);
+                  padding:28px;text-align:center;color:var(--muted)">
+        <div style="font-size:2rem;margin-bottom:8px">🕐</div>
+        <div style="font-weight:500;margin-bottom:4px">No active sessions right now</div>
+        <div style="font-size:0.83rem">Check back when your lecturer starts a session</div>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = `
+    ${active.map(s => `
+      <div class="session-card has-session" id="card-${s.courseTag ?? s.CourseTag}">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;
+                    gap:16px;flex-wrap:wrap;margin-bottom:16px">
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+              <div class="session-course">${s.courseTag ?? s.CourseTag}</div>
+              <span class="status status-live">Live</span>
+            </div>
+            <div class="session-meta">Duration: ${s.duration ?? s.Duration} min</div>
+          </div>
+          <button
+            class="mark-btn"
+            id="markBtn-${s.courseTag ?? s.CourseTag}"
+            onclick="markAttendance('${s.courseTag ?? s.CourseTag}', '${s.courseid ?? s.Courseid}')">
+            Mark Present ✓
+          </button>
+        </div>
+      </div>
+    `).join('')}
+
+    ${inactive.length ? `
+      <div style="background:white;border-radius:var(--radius);border:1px solid var(--border);
+                  padding:28px;text-align:center;color:var(--muted)">
+        <div style="font-weight:500;margin-bottom:4px">Upcoming sessions</div>
+        <div style="font-size:0.83rem">${inactive.map(s => s.courseTag ?? s.CourseTag).join(' · ')}</div>
+      </div>
+    ` : ''}
+  `;
+}
+
+async function markAttendance(courseTag, courseId) {
+  const btn = document.getElementById(`markBtn-${courseTag}`);
+  btn.textContent = 'Getting location...';
+  btn.disabled = true;
+
+  if (!navigator.geolocation) {
+    alert("Geolocation is not supported by your browser");
+    btn.textContent = 'Mark Present ✓';
+    btn.disabled = false;
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      const latitude  = position.coords.latitude;
+      const longitude = position.coords.longitude;
+
+      btn.textContent = 'Marking...';
+
+      try {
+        const res = await fetch(`${API_BASE}/api/Student/MarkAttendance`, {
+          method: "POST",
+          headers: authHeaders,
+          body: JSON.stringify({
+            courseId,
+            latitude,
+            longitude
+          })
+        });
+
+        const result = await res.json();
+
+        if (!res.ok || result.statuscode !== 200) {
+          alert(result.message || "Failed to mark attendance");
+          btn.textContent = 'Mark Present ✓';
+          btn.disabled = false;
+          return;
+        }
+
+        // Backend distance check determines present or absent
+        const status = result.data?.attendanceStatus ?? result.data?.AttendanceStatus;
+
+        if (status === true) {
+          btn.textContent = '✓ Present — You\'re in range';
+          btn.style.background = 'var(--success)';
+          btn.style.cursor = 'default';
+        } else {
+          btn.textContent = '✗ Absent — You\'re out of range';
+          btn.style.background = 'var(--danger)';
+          btn.style.cursor = 'default';
+        }
+        btn.disabled = true;
+
+      } catch (err) {
+        console.error(err);
+        alert("Could not connect to server");
+        btn.textContent = 'Mark Present ✓';
+        btn.disabled = false;
+      }
+    },
+    // (err) => {
+    //   console.error("Geolocation error:", err);
+    //   alert("Could not get your location. Please allow location access and try again.");
+    //   btn.textContent = 'Mark Present ✓';
+    //   btn.disabled = false;
+    // }
+    (err) => {
+  const messages = {
+    1: "Location permission denied. Please allow it in your browser settings.",
+    2: "Location unavailable. Check your device's location settings.",
+    3: "Location request timed out. Try again.",
+  };
+
+  alert(messages[err.code] || "Unknown location error");
+  console.error("Geolocation error code:", err.code, err.message);
+  btn.textContent = 'Mark Present ✓';
+  btn.disabled = false;
+},
+    { enableHighAccuracy: false, timeout: 15000, maximumAge: 30000 }
+  );
+  await loadAttendanceHistory();
+await loadEligibility();
+renderOverview();
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  // UI setup
+  const storedUsername = localStorage.getItem("username") || "Student";
+  const initials = storedUsername.slice(0, 2).toUpperCase();
+  document.querySelectorAll('.avatar').forEach(el => el.textContent = initials);
+  document.querySelector('.user-name').textContent = storedUsername;
+  document.getElementById('overviewGreeting').textContent = `Hey, ${storedUsername}! 👋`;
+  document.getElementById('overviewDate').textContent = new Date().toLocaleDateString('en-GB', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+  });
+
+  // Dropdown listener
+  document.getElementById('histCourse').addEventListener('change', (e) => {
+    loadAttendanceHistory(e.target.value || null);
+  });
+
+  // Wait for the two overview dependencies together, run the rest in parallel
+  await Promise.all([
+    loadAttendanceHistory(),
+    loadEligibility()        // ← now fetches eligibilityData before renderOverview
+  ]);
+
+  renderOverview();          // ← called ONCE, after both datasets are ready
+
+  // Other calls that don't affect overview can run freely
+  Promise.all([
+    loadEnrolledCourses(),
+    loadAvailableCourses(),
+    loadActiveSessions()
+  ]);
+});
+
+// // At the very top of your <script> block:
+// const storedUsername = localStorage.getItem("username") || "Student";
+// const initials = storedUsername.slice(0, 2).toUpperCase();
+
+// // Then after DOM loads, patch the UI:
+// document.addEventListener('DOMContentLoaded', () => {
+//   document.querySelectorAll('.avatar').forEach(el => el.textContent = initials);
+//   document.querySelector('.user-name').textContent = storedUsername;
+//   document.querySelector('.greeting h2').textContent = `Hey, ${storedUsername}! 👋`;
+//   loadAttendanceHistory();
+// });
+
+
+// document.addEventListener('DOMContentLoaded', () => {
+// loadAttendanceHistory();
+// loadEnrolledCourses();
+// loadAvailableCourses();
+// loadActiveSessions();
+
+//  document.getElementById('histCourse').addEventListener('change', (e) => {
+//     const courseid = e.target.value || null;
+//     loadAttendanceHistory(courseid);
+//   });
+// });
+
+
+
+function signOut() {
+ localStorage.removeItem('token');
+  localStorage.removeItem('username'); // add this
+  localStorage.removeItem('role');     // add this
+  window.location.href = 'index.html';
+}
+
+// // /* ─────────────────────────────────────
+// //    BOOT
+// // ─────────────────────────────────────*/
+
+// //   renderEnrolledCourses();
+
+//enrollCourse();
+// f
+</script>
+</body>
+</html>
